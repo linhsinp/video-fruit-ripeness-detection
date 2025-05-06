@@ -1,0 +1,6 @@
+*.MP4
+*.pt
+*.jpg
+.venv/
+demo/
+.DS_Store
