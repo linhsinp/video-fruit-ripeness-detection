@@ -4,28 +4,27 @@ from skimage.exposure import match_histograms
 
 import argparse
 import numpy as np
+import yaml
 
 from ultralytics import YOLO
 import supervision as sv
 import timeit
 
-SIZE_FILTER = True
-CORRECT_LIGHTING = True
-FOREGROUND_FRUIT_SIZE = 50000
-BACKGROUND_FRUIT_SIZE = 7000
-CONF_THRESHOLD = 20
-REFERENCE = "reference.jpg"
 
-# Scenario 1: day light - background size = 7000; foreground: 50000
-# video_path = "day_light.mp4"
+with open("app/config.yaml") as f:
+    config = yaml.load(f, Loader=yaml.FullLoader)
 
-# Scenario 2: pink light - background size = 3500; foreground: 30000
-# video_path = "pink_light.mp4"
+SIZE_FILTER: bool = config["size_filter"]
+CORRECT_LIGHTING: bool = config["correct_for_lighting"]
+CONF_THRESHOLD: int = config["config_threshold"]
 
-# Scenario 3: under shielded screen - background size = 7000; foreground: 50000
-video_path = "shielded_screen.mp4"
+REFERENCE: str = config["reference_image"]
+VIDEO_PATH: str = config["video_path"]
+MODEL_PATH: str = config["model_path"]
 
-model_path = "model.pt"
+SCENARIO: str = config["selected_scenario"]
+FOREGROUND_FRUIT_SIZE: int = config["experimentation"][SCENARIO]["foreground_fruit_size"]
+BACKGROUND_FRUIT_SIZE: int = config["experimentation"][SCENARIO]["background_fruit_size"]
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -35,15 +34,15 @@ def parse_arguments() -> argparse.Namespace:
     return args
 
 
-def correct_for_lighting(frame):
+def correct_for_lighting(frame: np.array) -> np.array:
     """use histogram matching to correct for lighting"""
-    img_ref = Image.open(REFERENCE).convert("RGB")
-    img_ref = np.array(img_ref)
-    frame = match_histograms(frame, img_ref, channel_axis=-1)
+    img_ref: Image = Image.open(REFERENCE).convert("RGB")
+    img_ref: np.array = np.array(img_ref)
+    frame: np.array = match_histograms(frame, img_ref, channel_axis=-1)
     return frame
 
 
-def inference_over_inhouse(results):
+def inference_over_inhouse(results: dict) -> dict:
     """reformat inference result from YOLOv8 inhouse model"""
 
     image = {}
@@ -73,13 +72,12 @@ def inference_over_inhouse(results):
     return result_dict
 
 
-def remove_prefix(s, prefix):
+def remove_prefix(s: str, prefix: str) -> str:
     return s[len(prefix) :] if s.startswith(prefix) else s
 
 
-def merge_class_ids(detections):
+def merge_class_ids(detections: dict) -> dict:
     '''deal with prefixes e.g. "b_" & "l_"'''
-    # result.names
     id = detections.class_id
     new_id = []
     for i in id:
@@ -95,7 +93,7 @@ def merge_class_ids(detections):
     return detections
 
 
-def merge_labels(model, detections):
+def merge_labels(model, detections: dict) -> list:
     '''deal with prefixes e.g. "b_" & "l_"'''
     labels = [
         f"{model.model.names[class_id]}"  # {confidence:0.2f}
@@ -109,7 +107,7 @@ def merge_labels(model, detections):
 def filter_by_size(
     label_ls: list,
     pixel_size_threshold: int = BACKGROUND_FRUIT_SIZE,
-):
+) -> tuple[list, list, list]:
     """
     Apply size filter to capture foreground instances.
     """
@@ -124,7 +122,7 @@ def filter_by_size(
     return bbox_background, bbox_foreground, sizes
 
 
-def apply_filter_sinlge_image(result, pixel_size_threshold: int = BACKGROUND_FRUIT_SIZE):
+def apply_filter_sinlge_image(result: dict, pixel_size_threshold: int = BACKGROUND_FRUIT_SIZE):
     """Apply foreground filter and plot on image"""
     label_ls = result["predictions"]
     _, bbox_foreground, sizes = filter_by_size(
@@ -139,19 +137,19 @@ def apply_filter_sinlge_image(result, pixel_size_threshold: int = BACKGROUND_FRU
 
 
 def main(
-    model_path: str,
-    video_path: str,
+    MODEL_PATH: str,
+    VIDEO_PATH: str,
     correct_lighting: bool = True,
     size_filter: bool = True,
 ):
     args = parse_arguments()
     frame_width, frame_height = args.webcam_resolution
 
-    cap = cv2.VideoCapture(video_path)  # 0 for Webcam
+    cap = cv2.VideoCapture(VIDEO_PATH)  # 0 for Webcam
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, frame_width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, frame_height)
 
-    model = YOLO(model_path)
+    model = YOLO(MODEL_PATH)
 
     label_annotator = sv.LabelAnnotator(text_scale=2, text_thickness=2, text_padding=2)
     mask_annotator = sv.BoundingBoxAnnotator()
@@ -166,7 +164,7 @@ def main(
         # pre-processing
         if correct_lighting:
             starttime = timeit.default_timer()
-            frame = correct_for_lighting(frame)
+            frame: np.array = correct_for_lighting(frame)
             print(
                 "* correct lighting takes:",
                 (round(timeit.default_timer() - starttime, ndigits=2)) * 1000,
@@ -179,7 +177,7 @@ def main(
         # filter background fruit
         if size_filter:
             starttime = timeit.default_timer()
-            result_dict = inference_over_inhouse(result)
+            result_dict: dict = inference_over_inhouse(result)
             filtered_result, _, _ = apply_filter_sinlge_image(result_dict)
             detections = sv.Detections.from_inference(filtered_result)
             print(
@@ -191,8 +189,8 @@ def main(
             detections = sv.Detections.from_ultralytics(result) # if no size filter
 
         # annotate detections
-        detections = merge_class_ids(detections) 
-        labels = merge_labels(model, detections)
+        detections: dict = merge_class_ids(detections) 
+        labels: list = merge_labels(model, detections)
         annotated_image = mask_annotator.annotate(scene=frame, detections=detections)
         annotated_image = label_annotator.annotate(
             scene=annotated_image, detections=detections, labels=labels
@@ -216,8 +214,8 @@ def main(
 
 if __name__ == "__main__":
     main(
-        model_path,
-        video_path,
+        MODEL_PATH,
+        VIDEO_PATH,
         size_filter=SIZE_FILTER,
         correct_lighting=CORRECT_LIGHTING,
     )
