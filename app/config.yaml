@@ -3,7 +3,6 @@ config_threshold: 20
 correct_for_lighting: true
 
 reference_image: reference.jpg
-video_path: shielded_screen.mp4
 model_path: model.pt
 
 selected_scenario: day_light

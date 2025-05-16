@@ -11,20 +11,20 @@ import supervision as sv
 import timeit
 
 
-with open("app/config.yaml") as f:
+with open("config.yaml") as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
 
 SIZE_FILTER: bool = config["size_filter"]
 CORRECT_LIGHTING: bool = config["correct_for_lighting"]
 CONF_THRESHOLD: int = config["config_threshold"]
 
-REFERENCE: str = config["reference_image"]
-VIDEO_PATH: str = config["video_path"]
-MODEL_PATH: str = config["model_path"]
-
 SCENARIO: str = config["selected_scenario"]
 FOREGROUND_FRUIT_SIZE: int = config["experimentation"][SCENARIO]["foreground_fruit_size"]
 BACKGROUND_FRUIT_SIZE: int = config["experimentation"][SCENARIO]["background_fruit_size"]
+
+REFERENCE: str = config["reference_image"]
+VIDEO_PATH: str = f"{SCENARIO}.MP4"
+MODEL_PATH: str = config["model_path"]
 
 
 def parse_arguments() -> argparse.Namespace:
