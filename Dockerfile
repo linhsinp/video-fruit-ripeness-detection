@@ -84,20 +84,5 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY --from=builder $PYSETUP_PATH $PYSETUP_PATH
-# COPY ./app ./
 
-# # explicitly assign port
-# EXPOSE 8081
-
-# run the web service on container startup
-# here we use the gunicorn webserver
-# with one worker process and 8 threads
-# for environments with multiple CPU cores
-# increase the number of workers
-# timeout is set to 0 to disable the timeouts of the workers
-# to allow Cloud Run to handle instance scaling.
-# CMD exec gunicorn --bind :8081 --workers 1 --threads 8 --timeout 0 main:app
-# CMD [ "gunicorn", "--bind=:8081", "--workers=1", "--threads=8", "--timeout=0", "main:app"]
-
-# docker run --rm --volume=/Users/hsin-pei/Desktop/HarvestAi_GitHub/sandbox/yolov8-live/app/:/app -i streaming
 ENTRYPOINT ["python", "main.py"]
