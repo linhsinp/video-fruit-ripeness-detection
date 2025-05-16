@@ -14,19 +14,19 @@ Python version >=3.9, <3.11
 1. Run the shell script in Terminal to set up a virtual environment using Poetry:
 
 ```bash
-$ source setup.sh
+source setup.sh
 ```
 
 2. Execute the python script:
 
 ```bash
-$ cd app
-$ python main.py
+cd app
+poetry run python main.py
 ```
 
 ### To visualize detection processing 
 
-Uncomment the following lines (201-221) in **main.py**:
+Uncomment the following lines (199-209) in **main.py**:
 
 ```python
 # disable for docker container
@@ -53,7 +53,7 @@ $ docker build -t streaming .
 2. Run container (mount the target directory from host)
 
 ```bash
-$ docker run --rm --volume=$YOUR_LOCAL_DIRECTORY/yolov8-live/app/:/app -i streaming
+$ docker run --rm --volume=$LOCAL_PROJECT_DIRECTORY/app/:/app -i streaming
 ```
 
 ### Make sure to turn off visualization 
