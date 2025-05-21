@@ -7,9 +7,9 @@ repos:
     rev: v5.0.0
     hooks:
     -   id: trailing-whitespace
-        exclude: ".*json$|.*txt$|.*csv|.*md|.*py"
+        exclude: ".*json$|.*txt$|.*csv|.*md"
     -   id: end-of-file-fixer
-        exclude: ".*json$|.*txt$|.*csv|.*md|.*py"
+        exclude: ".*json$|.*txt$|.*csv|.*md"
     -   id: check-yaml
     -   id: check-added-large-files
 
