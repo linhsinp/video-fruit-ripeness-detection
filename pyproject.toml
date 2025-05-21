@@ -18,6 +18,9 @@ inference-sdk = "^0.12.1"
 roboflow = "^1.1.32"
 supervision = "^0.21.0"
 ultralytics = "^8.2.73"
+pre-commit = "^4.2.0"
+isort = "^6.0.1"
+ruff = "^0.11.2"
 
 [build-system]
 requires = ["poetry-core=1.8.3"]
