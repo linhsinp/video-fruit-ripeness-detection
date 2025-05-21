@@ -11,7 +11,7 @@ repos:
     -   id: end-of-file-fixer
         exclude: ".*json$|.*txt$|.*csv|.*md|.*py"
     -   id: check-yaml
-    # -   id: check-added-large-files
+    -   id: check-added-large-files
 
 -   repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.11.2

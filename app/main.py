@@ -1,15 +1,13 @@
-import cv2
-from PIL import Image
-from skimage.exposure import match_histograms
-
 import argparse
-import numpy as np
-import yaml
-
-from ultralytics import YOLO
-import supervision as sv
 import timeit
 
+import cv2
+import numpy as np
+import supervision as sv
+import yaml
+from PIL import Image
+from skimage.exposure import match_histograms
+from ultralytics import YOLO
 
 with open("config.yaml") as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
