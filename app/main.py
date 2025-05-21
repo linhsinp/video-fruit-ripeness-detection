@@ -16,18 +16,24 @@ SIZE_FILTER: bool = config["size_filter"]
 CORRECT_LIGHTING: bool = config["correct_for_lighting"]
 CONF_THRESHOLD: int = config["config_threshold"]
 
-SCENARIO: str = config["selected_scenario"]
-FOREGROUND_FRUIT_SIZE: int = config["experimentation"][SCENARIO]["foreground_fruit_size"]
-BACKGROUND_FRUIT_SIZE: int = config["experimentation"][SCENARIO]["background_fruit_size"]
+SCENARIO: str = config["selected_video"]
+FOREGROUND_FRUIT_SIZE: int = config["experimentation"][SCENARIO][
+    "foreground_fruit_size"
+]
+BACKGROUND_FRUIT_SIZE: int = config["experimentation"][SCENARIO][
+    "background_fruit_size"
+]
+RESOLUTION: list = config["experimentation"][SCENARIO]["video_resolution"]
 
-REFERENCE: str = config["reference_image"]
-VIDEO_PATH: str = f"{SCENARIO}.MP4"
+DATA_DIR: str = config["data_dir"]
+REFERENCE: str = config["reference_path"]
+VIDEO_PATH: str = f"{DATA_DIR}/{SCENARIO}"
 MODEL_PATH: str = config["model_path"]
 
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="YOLOv8 live")
-    parser.add_argument("--webcam-resolution", default=[1080, 1920], nargs=2, type=int)
+    parser.add_argument("--webcam-resolution", default=RESOLUTION, nargs=2, type=int)
     args = parser.parse_args()
     return args
 
@@ -120,7 +126,9 @@ def filter_by_size(
     return bbox_background, bbox_foreground, sizes
 
 
-def apply_filter_sinlge_image(result: dict, pixel_size_threshold: int = BACKGROUND_FRUIT_SIZE):
+def apply_filter_sinlge_image(
+    result: dict, pixel_size_threshold: int = BACKGROUND_FRUIT_SIZE
+):
     """Apply foreground filter and plot on image"""
     label_ls = result["predictions"]
     _, bbox_foreground, sizes = filter_by_size(
@@ -170,7 +178,9 @@ def main(
             )
 
         # make inference
-        result = model.predict(frame, save_conf=True, conf=CONF_THRESHOLD/100, device="cpu")[0]
+        result = model.predict(
+            frame, save_conf=True, conf=CONF_THRESHOLD / 100, device="cpu"
+        )[0]
 
         # filter background fruit
         if size_filter:
@@ -184,10 +194,10 @@ def main(
                 "ms\n ",
             )
         else:
-            detections = sv.Detections.from_ultralytics(result) # if no size filter
+            detections = sv.Detections.from_ultralytics(result)  # if no size filter
 
         # annotate detections
-        detections: dict = merge_class_ids(detections) 
+        detections: dict = merge_class_ids(detections)
         labels: list = merge_labels(model, detections)
         annotated_image = mask_annotator.annotate(scene=frame, detections=detections)
         annotated_image = label_annotator.annotate(
@@ -204,7 +214,7 @@ def main(
         # else:
         #     print(k) # else print its value
         # # Destroy all OpenCV windows
-        # cv2.destroyAllWindows() 
+        # cv2.destroyAllWindows()
 
     # Release video sources
     cap.release()

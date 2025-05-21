@@ -1,6 +1,4 @@
-*.MP4
 *.pt
-*.jpg
 .venv/
-demo/
 .DS_Store
+app/tomato_1.mov

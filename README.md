@@ -1,12 +1,7 @@
 Video Fruit Ripeness Detection App
 ==================================
 
-A small, containerized app that detects fruit of different ripeness with adjustable size filter to differentiate background/foreground objects.
-
-
-## Prerequisite
-
-Python version >=3.9, <3.11
+A small, containerized app that detects fruit of different ripeness on the fly, applying light correction and adjustable a size filter to differentiate background/foreground objects. 
 
 
 ## Running in local machine
@@ -47,13 +42,13 @@ cv2.destroyAllWindows()
 1. Build docker image
 
 ```bash
-$ docker build -t streaming .
+docker build -t streaming .
 ```
 
 2. Run container (mount the target directory from host)
 
 ```bash
-$ docker run --rm --volume=$LOCAL_PROJECT_DIRECTORY/app/:/app -i streaming
+docker run --rm --volume=$LOCAL_PROJECT_DIRECTORY/app/:/app -i streaming
 ```
 
 ### Make sure to turn off visualization 

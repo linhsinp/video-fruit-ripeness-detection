@@ -2,17 +2,17 @@ size_filter: true
 config_threshold: 20
 correct_for_lighting: true
 
-reference_image: reference.jpg
+data_dir: .
+reference_path: reference.jpg
 model_path: model.pt
 
-selected_scenario: day_light
+selected_video: tomato_2.mp4 # tomato_1.mov
 experimentation:
-  day_light: 
+  # tomato_1.mov:
+  #   foreground_fruit_size: 30000
+  #   background_fruit_size: 3500
+  #   video_resolution: [3480, 2610]
+  tomato_2.mp4:
     foreground_fruit_size: 50000
     background_fruit_size: 7000
-  pink_light:
-    foreground_fruit_size: 30000
-    background_fruit_size: 3500
-  shielded_screen:
-    foreground_fruit_size: 50000
-    background_fruit_size: 7000
+    video_resolution: [1920, 1080]
