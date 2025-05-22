@@ -9,7 +9,7 @@ from PIL import Image
 from skimage.exposure import match_histograms
 from ultralytics import YOLO
 
-with open("config.yaml") as f:
+with open("app/config.yaml") as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
 
 SIZE_FILTER: bool = config["size_filter"]
@@ -117,7 +117,7 @@ def filter_by_size(
     """
     bbox_fruits = [
         x for x in label_ls if x["height"] * x["width"] < FOREGROUND_FRUIT_SIZE
-    ]  # hardcoded fixed threshold for fruits
+    ]
     sizes = [x["height"] * x["width"] for x in bbox_fruits]
     bbox_background = [
         x for x in bbox_fruits if x["height"] * x["width"] < pixel_size_threshold
@@ -142,11 +142,8 @@ def apply_filter_sinlge_image(
     return filtered_result, bbox_foreground, sizes
 
 
-def main(
-    MODEL_PATH: str,
-    VIDEO_PATH: str,
-    correct_lighting: bool = True,
-    size_filter: bool = True,
+def main_inference_generator(
+    correct_lighting: bool = CORRECT_LIGHTING, size_filter: bool = SIZE_FILTER
 ):
     args = parse_arguments()
     frame_width, frame_height = args.webcam_resolution
@@ -162,8 +159,6 @@ def main(
 
     while True:
         ret, frame = cap.read()
-
-        # Exit the loop if no more frames in either video
         if not ret:
             break
 
@@ -204,26 +199,10 @@ def main(
             scene=annotated_image, detections=detections, labels=labels
         )
 
-        # # disable for docker container
-        # cv2.imshow("yolov8", frame)
-        # k = cv2.waitKey(1)
-        # if k==27:    # Esc key to stop
-        #     break
-        # elif k==-1:  # normally -1 returned,so don't print it
-        #     continue
-        # else:
-        #     print(k) # else print its value
-        # # Destroy all OpenCV windows
-        # cv2.destroyAllWindows()
+        # generator that yields JPEG frames
+        ret, buffer = cv2.imencode(".jpg", annotated_image)
+        frame = buffer.tobytes()
 
-    # Release video sources
+        yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+
     cap.release()
-
-
-if __name__ == "__main__":
-    main(
-        MODEL_PATH,
-        VIDEO_PATH,
-        size_filter=SIZE_FILTER,
-        correct_lighting=CORRECT_LIGHTING,
-    )

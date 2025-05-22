@@ -36,7 +36,7 @@ ENV \
     POETRY_NO_INTERACTION=1 \
     \
     PYSETUP_PATH="/opt/pysetup" \
-    VENV_PATH="/opt/pysetup/.venv" 
+    VENV_PATH="/opt/pysetup/.venv"
 
 # prepend poetry and venv to path
 ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
@@ -82,7 +82,10 @@ RUN apt-get update \
     # libegl1 libgomp1 libglib2.0-0
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+WORKDIR /.
+        # /app
 COPY --from=builder $PYSETUP_PATH $PYSETUP_PATH
 
-ENTRYPOINT ["python", "main.py"]
+EXPOSE 5000
+CMD ["python", "app/app.py"]
+# ENTRYPOINT ["python", "app/main.py"]
