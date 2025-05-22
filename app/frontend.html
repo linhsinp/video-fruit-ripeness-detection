@@ -14,14 +14,32 @@
       const result = await response.json();
       alert(result.message);
     }
+
+    async function switchVideo(video) {
+      const response = await fetch(`/switch_video`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ video }),
+      });
+      const result = await response.json();
+      alert(result.message);
+
+      // Reload the video stream
+      const videoElement = document.querySelector('img');
+      videoElement.src = `/video_feed?${new Date().getTime()}`; // Add a timestamp to force reload
+    }
   </script>
 </head>
 <body>
   <h1>Video Fruit Ripeness Detection</h1>
-  <img src="http://localhost:5000/video_feed" width="720">
+  <img src="http://localhost:5000/video_feed" width="1080">
   <div>
     <button onclick="toggleOption('lighting')">Toggle Lighting Correction</button>
     <button onclick="toggleOption('filtering')">Toggle Size Filtering</button>
+    <button onclick="switchVideo('tomato_2.mp4')">Switch to Video 1</button>
+    <button onclick="switchVideo('tomato_1.mov')">Switch to Video 2</button>
   </div>
 </body>
 </html>

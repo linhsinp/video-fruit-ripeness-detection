@@ -1,4 +1,3 @@
-import argparse
 import logging
 import timeit
 
@@ -6,13 +5,9 @@ import cv2
 import numpy as np
 import supervision as sv
 from config import (
-    BACKGROUND_FRUIT_SIZE,
     CONF_THRESHOLD,
-    FOREGROUND_FRUIT_SIZE,
     MODEL_PATH,
     REFERENCE,
-    RESOLUTION,
-    VIDEO_PATH,
     model_options,
 )
 from PIL import Image
@@ -20,19 +15,12 @@ from skimage.exposure import match_histograms
 from ultralytics import YOLO
 
 
-def parse_arguments() -> argparse.Namespace:
-    """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description="YOLOv8 live")
-    parser.add_argument("--resolution", default=RESOLUTION, nargs=2, type=int)
-    args = parser.parse_args()
-    return args
-
-
 def correct_for_lighting(frame: np.array) -> np.array:
     """Use histogram matching to correct for lighting."""
     try:
-        img_ref: Image = Image.open(REFERENCE).convert("RGB")
+        img_ref: Image = Image.open(REFERENCE)
         img_ref: np.array = np.array(img_ref)
+        img_ref = cv2.cvtColor(img_ref, cv2.COLOR_BGR2RGB)
         frame: np.array = match_histograms(frame, img_ref, channel_axis=-1)
         return frame
     except Exception as e:
@@ -105,29 +93,31 @@ def merge_labels(model, detections: dict) -> list:
 
 def filter_by_size(
     label_ls: list,
-    pixel_size_threshold: int = BACKGROUND_FRUIT_SIZE,
+    background_size_threshold: int,
+    foreground_size_threshold: int,
 ) -> tuple[list, list, list]:
     """Apply size filter to capture foreground instances."""
     bbox_fruits = [
-        x for x in label_ls if x["height"] * x["width"] < FOREGROUND_FRUIT_SIZE
+        x for x in label_ls if x["height"] * x["width"] < foreground_size_threshold
     ]
     sizes = [x["height"] * x["width"] for x in bbox_fruits]
     bbox_background = [
-        x for x in bbox_fruits if x["height"] * x["width"] < pixel_size_threshold
+        x for x in bbox_fruits if x["height"] * x["width"] < background_size_threshold
     ]
     bbox_foreground = [x for x in bbox_fruits if x not in bbox_background]
     return bbox_background, bbox_foreground, sizes
 
 
 def apply_filter_sinlge_image(
-    result: dict, pixel_size_threshold: int = BACKGROUND_FRUIT_SIZE
+    result: dict, background_size_threshold: int, foreground_size_threshold: int
 ):
     """Apply foreground filter and plot on image."""
     try:
         label_ls = result["predictions"]
         _, bbox_foreground, sizes = filter_by_size(
             label_ls,
-            pixel_size_threshold=pixel_size_threshold,
+            background_size_threshold=background_size_threshold,
+            foreground_size_threshold=foreground_size_threshold,
         )
         logging.info(f"Filtered {len(bbox_foreground)} foreground objects.")
         filtered_result = {
@@ -140,19 +130,20 @@ def apply_filter_sinlge_image(
         return result, [], []
 
 
-def inference_generator():
+def inference_generator(video_path, video_settings):
     """Main inference generator function."""
 
-    # Initial set up
     correct_lighting = model_options["lighting"]
     size_filter = model_options["filtering"]
     logging.info(
         f"Lighting correction: {correct_lighting}, Size filtering: {size_filter}"
     )
+    logging.info(f"Using video settings: {video_settings}")
 
-    args = parse_arguments()
-    frame_width, frame_height = args.resolution
-    cap = cv2.VideoCapture(VIDEO_PATH)  # 0 for Webcam
+    # args = parse_arguments()
+    # frame_width, frame_height = args.resolution
+    frame_width, frame_height = video_settings["video_resolution"]
+    cap = cv2.VideoCapture(video_path)  # Use the dynamic video path
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, frame_width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, frame_height)
 
@@ -170,7 +161,7 @@ def inference_generator():
         correct_lighting = model_options["lighting"]
         size_filter = model_options["filtering"]
 
-        # pre-processing
+        # Pre-processing
         if correct_lighting:
             starttime = timeit.default_timer()
             frame: np.array = correct_for_lighting(frame)
@@ -180,16 +171,20 @@ def inference_generator():
                 "ms",
             )
 
-        # make inference
+        # Make inference
         result = model.predict(
             frame, save_conf=True, conf=CONF_THRESHOLD / 100, device="cpu"
         )[0]
 
-        # filter background fruit
+        # Filter background fruit
         if size_filter:
             starttime = timeit.default_timer()
             result_dict: dict = reformat_inference(result)
-            filtered_result, _, _ = apply_filter_sinlge_image(result_dict)
+            filtered_result, _, _ = apply_filter_sinlge_image(
+                result_dict,
+                background_size_threshold=video_settings["background_fruit_size"],
+                foreground_size_threshold=video_settings["foreground_fruit_size"],
+            )
             detections = sv.Detections.from_inference(filtered_result)
             print(
                 "* filtering background takes:",
@@ -199,7 +194,7 @@ def inference_generator():
         else:
             detections = sv.Detections.from_ultralytics(result)
 
-        # annotate detections
+        # Annotate detections
         detections: dict = merge_class_ids(detections)
         labels: list = merge_labels(model, detections)
         annotated_image = mask_annotator.annotate(scene=frame, detections=detections)
@@ -207,7 +202,7 @@ def inference_generator():
             scene=annotated_image, detections=detections, labels=labels
         )
 
-        # generator that yields JPEG frames
+        # Generator that yields JPEG frames
         ret, buffer = cv2.imencode(".jpg", annotated_image)
         frame = buffer.tobytes()
 

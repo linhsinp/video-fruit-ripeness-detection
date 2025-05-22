@@ -1,12 +1,16 @@
 import logging
 
-from config import model_options
+from config import get_video_path, get_video_settings, model_options
 from flask import Flask, Response, jsonify, render_template, request
 from main import inference_generator
 
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__, template_folder=".")
+
+# Global variables to store the currently selected video and its settings
+current_video = get_video_path("tomato_2.mp4")  # Default video path
+video_settings = get_video_settings("tomato_2.mp4")  # Default video settings
 
 
 @app.route("/")
@@ -18,7 +22,7 @@ def index():
 def video_feed():
     try:
         return Response(
-            inference_generator(),
+            inference_generator(current_video, video_settings),
             mimetype="multipart/x-mixed-replace; boundary=frame",
         )
     except Exception as e:
@@ -38,6 +42,21 @@ def toggle_option():
         )
     else:
         return jsonify({"message": "Invalid option."}), 400
+
+
+@app.route("/switch_video", methods=["POST"])
+def switch_video():
+    global current_video, video_settings
+    data = request.get_json()
+    video = data.get("video")
+    if video:
+        current_video = get_video_path(video)
+        video_settings = get_video_settings(video)
+        app.logger.info(f"Switched to video: {current_video}")
+        app.logger.info(f"Updated video settings: {video_settings}")
+        return jsonify({"message": f"Switched to video: {current_video}"})
+    else:
+        return jsonify({"message": "Invalid video selection."}), 400
 
 
 if __name__ == "__main__":
