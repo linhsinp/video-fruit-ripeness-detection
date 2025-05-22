@@ -15,72 +15,54 @@ source setup.sh
 2. Execute the python script:
 
 ```bash
-cd app
-poetry run python main.py
+poetry run python app/app.py
 ```
 
-### To visualize detection processing 
+3. Open the user interface at local host: [http://127.0.0.1:5000](http://127.0.0.1:5000)
 
-Uncomment the following lines (199-209) in **main.py**:
+    Use the buttons below the video stream to:
+    - Toggle lighting condition (on: videos corrected to the reference image)
+    - Toggle size filter (on: filtering out background fruits as specified in config)
+    - Switch between two demo videos
 
-```python
-# disable for docker container
-cv2.imshow("yolov8", frame)
-k = cv2.waitKey(1)
-if k==27:    # Esc key to stop
-    break
-elif k==-1:  # normally -1 returned,so don't print it
-    continue
-else:
-    print(k) # else print its value
-# Destroy all OpenCV windows
-cv2.destroyAllWindows() 
-```
 
 ## Running in docker environment
 
 1. Build docker image
 
 ```bash
-docker build -t streaming .
+docker build -t video-fruit-ripeness-detection .
 ```
 
 2. Run container (mount the target directory from host)
 
 ```bash
-docker run --rm --volume=$LOCAL_PROJECT_DIRECTORY/app/:/app -i streaming
+docker run -p 5000:5000 video-fruit-ripeness-detection
 ```
 
-### Make sure to turn off visualization 
+3. Open the user interface at local host: [http://127.0.0.1:5000](http://127.0.0.1:5000)
 
-Comment out the following lines (201-221) in **main.py**:
-
-```python
-# # disable for docker container
-# cv2.imshow("yolov8", frame)
-# k = cv2.waitKey(1)
-# if k==27:    # Esc key to stop
-#     break
-# elif k==-1:  # normally -1 returned,so don't print it
-#     continue
-# else:
-#     print(k) # else print its value
-# # Destroy all OpenCV windows
-# cv2.destroyAllWindows() 
-```
-
+    Use the buttons below the video stream to:
+    - Toggle lighting condition (on: videos corrected to the reference image)
+    - Toggle size filter (on: filtering out background fruits as specified in config)
+    - Switch between two demo videos
 
 ## Project structure
 
 ```bash
+
     .
     ├── README.md
     ├── setup.sh          # Shell script to set up a Poetry environment
     ├── poetry.lock      
     ├── pyproject.toml    # Poetry file that defines the python library dependencies
-    └── app              
+    ├── app              
+    │   ├── config*       # Configuration files to specify the default setups
+    │   ├── model.pt      # YOLOv8 object detection / instance segmentation model
+    │   ├── frontend.html # Frontend to show the user interface
+    │   ├── app.py        # Flask app to launch the detection service
+    │   └── main.py       # Source script to run the inference generator
+    └── data              
         ├── *.MP4         # Example video files to make inference from
-        ├── *.pt          # YOLOv8 object detection / instance segmentation model
-        ├── main.py
         └── reference.jpg # reference image for lighting correction
 ```

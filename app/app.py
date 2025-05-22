@@ -21,10 +21,14 @@ def index():
 @app.route("/video_feed")
 def video_feed():
     try:
-        return Response(
+        response = Response(
             inference_generator(current_video, video_settings),
             mimetype="multipart/x-mixed-replace; boundary=frame",
         )
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
     except Exception as e:
         app.logger.error(f"Error in video_feed: {e}")
         return "Error in video feed", 500

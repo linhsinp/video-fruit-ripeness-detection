@@ -6,7 +6,7 @@
 # PYTHON-BASE
 # Sets up all our shared environment variables
 ################################
-FROM python:3.9-slim AS python-base
+FROM python:3.10-slim AS python-base
 # https://dev.to/oben/apple-silicon-mac-m1m2-how-to-deal-with-slow-docker-performance-58n0
 # FROM arm64v8/python:3.9-slim AS python-base
 
@@ -56,7 +56,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # install poetry - respects $POETRY_VERSION & $POETRY_HOME
-RUN curl -sSL https://install.python-poetry.org | python3 - --version $POETRY_VERSION
+RUN curl -sSL https://install.python-poetry.org | python3.10 - --version $POETRY_VERSION
 
 RUN pip install "virtualenv>=20.23.0"
 
@@ -78,14 +78,14 @@ FROM python-base AS production
 
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
-    libgl1 libglib2.0-0 \
-    # libegl1 libgomp1 libglib2.0-0
+        libgl1 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /.
-        # /app
 COPY --from=builder $PYSETUP_PATH $PYSETUP_PATH
+COPY app ./app
+COPY data ./data
+COPY app/config.yaml ./app/config.yaml
 
 EXPOSE 5000
 CMD ["python", "app/app.py"]
-# ENTRYPOINT ["python", "app/main.py"]
