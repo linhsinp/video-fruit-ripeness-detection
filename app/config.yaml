@@ -1,10 +1,10 @@
 size_filter: true
-config_threshold: 20
-correct_for_lighting: true
+config_threshold: 60
+correct_for_lighting: false # true
 
-data_dir: .
-reference_path: reference.jpg
-model_path: model.pt
+data_dir: ./data
+reference_path: data/reference.jpg
+model_path: app/model.pt
 
 selected_video: tomato_2.mp4 # tomato_1.mov
 experimentation:
@@ -13,6 +13,6 @@ experimentation:
   #   background_fruit_size: 3500
   #   video_resolution: [3480, 2610]
   tomato_2.mp4:
-    foreground_fruit_size: 50000
-    background_fruit_size: 7000
+    foreground_fruit_size: 70000
+    background_fruit_size: 1000
     video_resolution: [1920, 1080]
