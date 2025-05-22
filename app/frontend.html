@@ -2,9 +2,26 @@
 <html>
 <head>
   <title>Video Fruit Ripeness Detection Stream</title>
+  <script>
+    async function toggleOption(option) {
+      const response = await fetch(`/toggle_option`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ option }),
+      });
+      const result = await response.json();
+      alert(result.message);
+    }
+  </script>
 </head>
 <body>
   <h1>Video Fruit Ripeness Detection</h1>
   <img src="http://localhost:5000/video_feed" width="720">
+  <div>
+    <button onclick="toggleOption('lighting')">Toggle Lighting Correction</button>
+    <button onclick="toggleOption('filtering')">Toggle Size Filtering</button>
+  </div>
 </body>
 </html>

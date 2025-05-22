@@ -1,53 +1,47 @@
 import argparse
+import logging
 import timeit
 
 import cv2
 import numpy as np
 import supervision as sv
-import yaml
+from config import (
+    BACKGROUND_FRUIT_SIZE,
+    CONF_THRESHOLD,
+    FOREGROUND_FRUIT_SIZE,
+    MODEL_PATH,
+    REFERENCE,
+    RESOLUTION,
+    VIDEO_PATH,
+    model_options,
+)
 from PIL import Image
 from skimage.exposure import match_histograms
 from ultralytics import YOLO
 
-with open("app/config.yaml") as f:
-    config = yaml.load(f, Loader=yaml.FullLoader)
-
-SIZE_FILTER: bool = config["size_filter"]
-CORRECT_LIGHTING: bool = config["correct_for_lighting"]
-CONF_THRESHOLD: int = config["config_threshold"]
-
-SCENARIO: str = config["selected_video"]
-FOREGROUND_FRUIT_SIZE: int = config["experimentation"][SCENARIO][
-    "foreground_fruit_size"
-]
-BACKGROUND_FRUIT_SIZE: int = config["experimentation"][SCENARIO][
-    "background_fruit_size"
-]
-RESOLUTION: list = config["experimentation"][SCENARIO]["video_resolution"]
-
-DATA_DIR: str = config["data_dir"]
-REFERENCE: str = config["reference_path"]
-VIDEO_PATH: str = f"{DATA_DIR}/{SCENARIO}"
-MODEL_PATH: str = config["model_path"]
-
 
 def parse_arguments() -> argparse.Namespace:
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="YOLOv8 live")
-    parser.add_argument("--webcam-resolution", default=RESOLUTION, nargs=2, type=int)
+    parser.add_argument("--resolution", default=RESOLUTION, nargs=2, type=int)
     args = parser.parse_args()
     return args
 
 
 def correct_for_lighting(frame: np.array) -> np.array:
-    """use histogram matching to correct for lighting"""
-    img_ref: Image = Image.open(REFERENCE).convert("RGB")
-    img_ref: np.array = np.array(img_ref)
-    frame: np.array = match_histograms(frame, img_ref, channel_axis=-1)
-    return frame
+    """Use histogram matching to correct for lighting."""
+    try:
+        img_ref: Image = Image.open(REFERENCE).convert("RGB")
+        img_ref: np.array = np.array(img_ref)
+        frame: np.array = match_histograms(frame, img_ref, channel_axis=-1)
+        return frame
+    except Exception as e:
+        logging.error(f"Error in correct_for_lighting: {e}")
+        return frame  # Return the original frame if correction fails
 
 
-def inference_over_inhouse(results: dict) -> dict:
-    """reformat inference result from YOLOv8 inhouse model"""
+def reformat_inference(results: dict) -> dict:
+    """Reformat inference result from YOLOv8 model."""
 
     image = {}
     image["width"] = results.orig_shape[1]
@@ -77,11 +71,12 @@ def inference_over_inhouse(results: dict) -> dict:
 
 
 def remove_prefix(s: str, prefix: str) -> str:
+    """Remove prefix from string."""
     return s[len(prefix) :] if s.startswith(prefix) else s
 
 
 def merge_class_ids(detections: dict) -> dict:
-    '''deal with prefixes e.g. "b_" & "l_"'''
+    """Merge class IDs to remove prefixes."""
     id = detections.class_id
     new_id = []
     for i in id:
@@ -98,7 +93,7 @@ def merge_class_ids(detections: dict) -> dict:
 
 
 def merge_labels(model, detections: dict) -> list:
-    '''deal with prefixes e.g. "b_" & "l_"'''
+    """Merge labels to remove prefixes."""
     labels = [
         f"{model.model.names[class_id]}"  # {confidence:0.2f}
         for _, _, confidence, class_id, _, _ in detections
@@ -112,9 +107,7 @@ def filter_by_size(
     label_ls: list,
     pixel_size_threshold: int = BACKGROUND_FRUIT_SIZE,
 ) -> tuple[list, list, list]:
-    """
-    Apply size filter to capture foreground instances.
-    """
+    """Apply size filter to capture foreground instances."""
     bbox_fruits = [
         x for x in label_ls if x["height"] * x["width"] < FOREGROUND_FRUIT_SIZE
     ]
@@ -129,25 +122,36 @@ def filter_by_size(
 def apply_filter_sinlge_image(
     result: dict, pixel_size_threshold: int = BACKGROUND_FRUIT_SIZE
 ):
-    """Apply foreground filter and plot on image"""
-    label_ls = result["predictions"]
-    _, bbox_foreground, sizes = filter_by_size(
-        label_ls,
-        pixel_size_threshold=pixel_size_threshold,
+    """Apply foreground filter and plot on image."""
+    try:
+        label_ls = result["predictions"]
+        _, bbox_foreground, sizes = filter_by_size(
+            label_ls,
+            pixel_size_threshold=pixel_size_threshold,
+        )
+        logging.info(f"Filtered {len(bbox_foreground)} foreground objects.")
+        filtered_result = {
+            "predictions": bbox_foreground,
+            "image": result["image"],
+        }
+        return filtered_result, bbox_foreground, sizes
+    except Exception as e:
+        logging.error(f"Error in apply_filter_sinlge_image: {e}")
+        return result, [], []
+
+
+def inference_generator():
+    """Main inference generator function."""
+
+    # Initial set up
+    correct_lighting = model_options["lighting"]
+    size_filter = model_options["filtering"]
+    logging.info(
+        f"Lighting correction: {correct_lighting}, Size filtering: {size_filter}"
     )
-    filtered_result = {
-        "predictions": bbox_foreground,
-        "image": result["image"],
-    }
-    return filtered_result, bbox_foreground, sizes
 
-
-def main_inference_generator(
-    correct_lighting: bool = CORRECT_LIGHTING, size_filter: bool = SIZE_FILTER
-):
     args = parse_arguments()
-    frame_width, frame_height = args.webcam_resolution
-
+    frame_width, frame_height = args.resolution
     cap = cv2.VideoCapture(VIDEO_PATH)  # 0 for Webcam
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, frame_width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, frame_height)
@@ -161,6 +165,10 @@ def main_inference_generator(
         ret, frame = cap.read()
         if not ret:
             break
+
+        # Dynamically check the current state of model_options
+        correct_lighting = model_options["lighting"]
+        size_filter = model_options["filtering"]
 
         # pre-processing
         if correct_lighting:
@@ -180,7 +188,7 @@ def main_inference_generator(
         # filter background fruit
         if size_filter:
             starttime = timeit.default_timer()
-            result_dict: dict = inference_over_inhouse(result)
+            result_dict: dict = reformat_inference(result)
             filtered_result, _, _ = apply_filter_sinlge_image(result_dict)
             detections = sv.Detections.from_inference(filtered_result)
             print(
@@ -189,7 +197,7 @@ def main_inference_generator(
                 "ms\n ",
             )
         else:
-            detections = sv.Detections.from_ultralytics(result)  # if no size filter
+            detections = sv.Detections.from_ultralytics(result)
 
         # annotate detections
         detections: dict = merge_class_ids(detections)

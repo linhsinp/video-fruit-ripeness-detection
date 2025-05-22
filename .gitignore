@@ -1,4 +1,4 @@
 *.pt
 .venv/
 .DS_Store
-app/tomato_1.mov
+data/tomato_1.mov
