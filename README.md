@@ -34,7 +34,7 @@ poetry run python app/app.py
 docker build -t video-fruit-ripeness-detection .
 ```
 
-2. Run container (mount the target directory from host)
+2. Run container
 
 ```bash
 docker run -p 5000:5000 video-fruit-ripeness-detection
@@ -46,6 +46,18 @@ docker run -p 5000:5000 video-fruit-ripeness-detection
     - Toggle lighting condition (on: videos corrected to the reference image)
     - Toggle size filter (on: filtering out background fruits as specified in config)
     - Switch between two demo videos
+
+## Apply the app to custom videos
+
+1. Add your videos to the directory **data**. 
+
+2. Update the experimentation information in **app/config.yaml**.
+
+3. Run the following to compress your videos before launching the app:
+
+```bash
+poetry run python app/precompress_videos.py
+```
 
 ## Project structure
 
@@ -60,6 +72,7 @@ docker run -p 5000:5000 video-fruit-ripeness-detection
     │   ├── config*       # Configuration files to specify the default setups
     │   ├── model.pt      # YOLOv8 object detection / instance segmentation model
     │   ├── frontend.html # Frontend to show the user interface
+    │   ├── precompress_videos.py        # Script to compress custom videos
     │   ├── app.py        # Flask app to launch the detection service
     │   └── main.py       # Source script to run the inference generator
     └── data              

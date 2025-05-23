@@ -14,14 +14,14 @@ model_options = {
 }
 
 CONF_THRESHOLD: int = config["config_threshold"]
-DATA_DIR: str = config["data_dir"]
+COMPRESSED_DIR: str = config["compressed_dir"]
 REFERENCE: str = config["reference_path"]
 MODEL_PATH: str = config["model_path"]
 
 
 def get_video_path(video_name: str) -> str:
     """Function to get the video path."""
-    return os.path.join(DATA_DIR, video_name)
+    return os.path.join(COMPRESSED_DIR, video_name)
 
 
 def get_video_settings(video_name_or_path: str):

@@ -149,7 +149,9 @@ def inference_generator(video_path, video_settings):
 
     model = YOLO(MODEL_PATH)
 
-    label_annotator = sv.LabelAnnotator(text_scale=2, text_thickness=2, text_padding=2)
+    label_annotator = sv.LabelAnnotator(
+        text_scale=0.6, text_thickness=1, text_padding=4
+    )
     mask_annotator = sv.BoundingBoxAnnotator()
 
     while True:

@@ -85,6 +85,7 @@ WORKDIR /.
 COPY --from=builder $PYSETUP_PATH $PYSETUP_PATH
 COPY app ./app
 COPY data ./data
+COPY compressed_videos ./compressed_videos
 COPY app/config.yaml ./app/config.yaml
 
 EXPOSE 5000
