@@ -2,35 +2,7 @@
 <html>
 <head>
   <title>Video Fruit Ripeness Detection Stream</title>
-  <script>
-    async function toggleOption(option) {
-      const response = await fetch(`/toggle_option`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ option }),
-      });
-      const result = await response.json();
-      alert(result.message);
-    }
-
-    async function switchVideo(video) {
-      const response = await fetch(`/switch_video`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ video }),
-      });
-      const result = await response.json();
-      alert(result.message);
-
-      // Reload the video stream
-      const videoElement = document.querySelector('img');
-      videoElement.src = `/video_feed?${new Date().getTime()}`; // Add a timestamp to force reload
-    }
-  </script>
+  <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
   <h1>Video Fruit Ripeness Detection</h1>
@@ -41,5 +13,6 @@
     <button onclick="switchVideo('tomato_2.mp4')">Switch to Video 1</button>
     <button onclick="switchVideo('tomato_1.mov')">Switch to Video 2</button>
   </div>
+  <script src="/static/scripts.js"></script>
 </body>
 </html>

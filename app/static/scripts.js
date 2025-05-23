@@ -1,0 +1,27 @@
+async function toggleOption(option) {
+  const response = await fetch(`/toggle_option`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ option }),
+  });
+  const result = await response.json();
+  alert(result.message);
+}
+
+async function switchVideo(video) {
+  const response = await fetch(`/switch_video`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ video }),
+  });
+  const result = await response.json();
+  alert(result.message);
+
+  // Reload the video stream
+  const videoElement = document.querySelector('img');
+  videoElement.src = `/video_feed?${new Date().getTime()}`; // Add a timestamp to force reload
+}
