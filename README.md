@@ -3,7 +3,9 @@ Video Fruit Ripeness Detection App
 
 A small, containerized app that detects fruit of different ripeness on the fly, applying light correction and adjustable a size filter to differentiate background/foreground objects. 
 
-<video src='compressed_videos/demo.mov'></video>
+https://github.com/user-attachments/assets/9a352697-c4c0-4e6a-b218-8b7c77e6aba6
+
+
 
 ## Running in local machine
 
