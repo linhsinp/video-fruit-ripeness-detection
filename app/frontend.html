@@ -7,12 +7,14 @@
 <body>
   <h1>Video Fruit Ripeness Detection</h1>
   <img src="http://localhost:5000/video_feed" width="864">
-  <div>
+  <div class="button-container">
     <button onclick="toggleOption('lighting')">Toggle Lighting Correction</button>
     <button onclick="toggleOption('filtering')">Toggle Size Filtering</button>
-    <button onclick="switchVideo('tomato_2.mp4')">Switch to Video 1</button>
-    <button onclick="switchVideo('tomato_1.mov')">Switch to Video 2</button>
+    <button onclick="switchVideo('tomato_1.mov')">Switch to Video 1</button>
+    <button onclick="switchVideo('tomato_2.mp4')">Switch to Video 2</button>
   </div>
+  <!-- Status message placeholder -->
+  <div id="status-message" style="display: none; margin-top: 20px; color: green; font-weight: bold;"></div>
   <script src="/static/scripts.js"></script>
 </body>
 </html>

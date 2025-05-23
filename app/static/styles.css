@@ -5,8 +5,8 @@ body {
   align-items: center;
   height: 100vh;
   margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: #dceafa;
+  font-family: Verdana, sans-serif;
+  background-color: #f9f9f9;
 }
 
 h1 {
@@ -19,9 +19,10 @@ img {
   border-radius: 8px;
 }
 
-div {
-  display: flex;
-  flex-direction: column;
+/* Arrange buttons in a 2x2 grid */
+.button-container {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
   gap: 10px;
 }
 
@@ -30,12 +31,12 @@ button {
   font-size: 16px;
   border: none;
   border-radius: 5px;
-  background-color: #007bff;
+  background-color: #010408;
   color: white;
   cursor: pointer;
   transition: background-color 0.3s;
 }
 
 button:hover {
-  background-color: #0056b3;
+  background-color: #767b81;
 }

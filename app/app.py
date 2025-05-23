@@ -9,8 +9,8 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__, template_folder=".")
 
 # Global variables to store the currently selected video and its settings
-current_video = get_video_path("tomato_2.mp4")  # Default video path
-video_settings = get_video_settings("tomato_2.mp4")  # Default video settings
+current_video = get_video_path("tomato_1.mov")  # Default video path
+video_settings = get_video_settings("tomato_1.mov")  # Default video settings
 
 
 @app.route("/")

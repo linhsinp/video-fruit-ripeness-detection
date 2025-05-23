@@ -7,8 +7,8 @@ reference_path: ./data/reference.jpg
 model_path: ./app/model.pt
 
 video_list:
-  - tomato_2.mp4
   - tomato_1.mov
+  - tomato_2.mp4
 experimentation:
   tomato_1.mov:
     foreground_fruit_size: 20000
