@@ -1,6 +1,7 @@
-import os
+from os import environ, path
 
 import yaml
+from dotenv import load_dotenv
 
 with open("app/config.yaml") as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
@@ -22,18 +23,22 @@ MODEL_PATH: str = config["model_path"]
 
 MODEL_PROJECT_NAME: str = config["model_project_name"]
 MODEL_API_URL: str = config["model_api_url"]
-MODEL_API_KEY: str = config["model_api_key"]
 MODEL_VERSION: int = config["model_version"]
+
+# open-source pre-trained models
+basedir = path.abspath(path.dirname(".env"))
+load_dotenv(path.join(basedir, ".env"))
+MODEL_API_KEY = environ.get("model_api_key")
 
 
 def get_video_path(video_name: str) -> str:
     """Function to get the video path."""
-    return os.path.join(COMPRESSED_DIR, video_name)
+    return path.join(COMPRESSED_DIR, video_name)
 
 
 def get_video_settings(video_name_or_path: str):
     """Function to get video-specific settings."""
-    video_name = os.path.basename(video_name_or_path)
+    video_name = path.basename(video_name_or_path)
     FOREGROUND_FRUIT_SIZE: int = config["experimentation"][video_name][
         "foreground_fruit_size"
     ]
