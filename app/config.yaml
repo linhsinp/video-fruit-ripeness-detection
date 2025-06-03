@@ -4,7 +4,14 @@ correct_for_lighting: false
 
 compressed_dir: ./compressed_videos
 reference_path: ./data/reference.jpg
+
+# Model configuration
+inhouse_model: false
 model_path: ./app/model.pt
+model_project_name: tomato-ripness-unripness
+model_api_url: https://outline.roboflow.com # https://serverless.roboflow.com
+model_api_key: XDpSZhQILNZFNxpsRPiX
+model_version: 1
 
 video_list:
   - tomato_1.mov

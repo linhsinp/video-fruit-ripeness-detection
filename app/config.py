@@ -16,7 +16,14 @@ model_options = {
 CONF_THRESHOLD: int = config["config_threshold"]
 COMPRESSED_DIR: str = config["compressed_dir"]
 REFERENCE: str = config["reference_path"]
+
+INHOUSE_MODEL: bool = config["inhouse_model"]
 MODEL_PATH: str = config["model_path"]
+
+MODEL_PROJECT_NAME: str = config["model_project_name"]
+MODEL_API_URL: str = config["model_api_url"]
+MODEL_API_KEY: str = config["model_api_key"]
+MODEL_VERSION: int = config["model_version"]
 
 
 def get_video_path(video_name: str) -> str:
