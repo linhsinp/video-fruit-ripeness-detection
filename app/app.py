@@ -11,6 +11,12 @@ app = Flask(__name__, template_folder=".")
 # Global variables to store the currently selected video and its settings
 current_video = get_video_path("tomato_1.mov")  # Default video path
 video_settings = get_video_settings("tomato_1.mov")  # Default video settings
+latest_class_counts = {}
+
+
+def update_class_counts(counts):
+    global latest_class_counts
+    latest_class_counts = counts
 
 
 @app.route("/")
@@ -22,7 +28,7 @@ def index():
 def video_feed():
     try:
         response = Response(
-            inference_generator(current_video, video_settings),
+            inference_generator(current_video, video_settings, update_class_counts),
             mimetype="multipart/x-mixed-replace; boundary=frame",
         )
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -32,6 +38,11 @@ def video_feed():
     except Exception as e:
         app.logger.error(f"Error in video_feed: {e}")
         return "Error in video feed", 500
+
+
+@app.route("/class_counts")
+def class_counts():
+    return jsonify(latest_class_counts)
 
 
 @app.route("/toggle_option", methods=["POST"])

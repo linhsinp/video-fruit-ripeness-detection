@@ -156,7 +156,7 @@ def inference_over_api(frame: Image) -> dict:
     return result
 
 
-def inference_generator(current_video: str, video_settings: dict):
+def inference_generator(current_video, video_settings, class_counts_callback=None):
     """Main inference generator function."""
 
     correct_lighting = model_options["lighting"]
@@ -245,7 +245,10 @@ def inference_generator(current_video: str, video_settings: dict):
             labels = detections.data["class_name"].tolist()
         labels: list = merge_labels(labels)
         class_counts = np.unique(labels, return_counts=True)
-        logging.info(f"Class counts: {dict(zip(*class_counts))}")
+        counts_dict = {str(k): int(v) for k, v in zip(*class_counts)}
+        logging.info(f"Class counts: {counts_dict}")
+        if class_counts_callback:
+            class_counts_callback(counts_dict)
 
         # Annotate detections
         annotated_image = mask_annotator.annotate(scene=frame, detections=detections)
