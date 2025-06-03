@@ -5,3 +5,4 @@ data/tomato_1.mov
 data/tomato_2.mp4
 data/demo.mov
 __pycache__
+.env

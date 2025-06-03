@@ -1,9 +1,39 @@
 Video Fruit Ripeness Detection App
 ==================================
 
-A small, containerized app that detects fruit of different ripeness on the fly, applying light correction and adjustable a size filter to differentiate background/foreground objects. 
+A small, containerized app that counts fruit of different ripeness on the fly, applying light correction and adjustable a size filter to differentiate background/foreground objects. 
 
 <img src="data/demo.gif"/>
+
+## Prerequisite: Picking a Fruit Detection Model
+
+### Option 1. Using a custom-trained model
+
+Save your model to the path. Change the app/config.yaml file for the correct setup.
+
+```yaml
+# Model configuration
+inhouse_model: true
+# If using a custom model, set inhouse_model to true and provide the path to the model
+model_path: ./app/model.pt
+```
+
+Open source training data can be found the the following Roboflow project.
+
+### Option 2. Using a Roboflow pre-trained model
+
+Create a Roboflow account. Get the API for this project: [tomato-ripness-unripness](https://universe.roboflow.com/tomato-svqnp/tomato-ripness-unripness/model/1) under *Infer on Local and Hosted Images*. Create a ".env" file with the following information:
+
+```bash
+model_api_key="${YOUR_API_KEY}"
+```
+
+Change the app/config.yaml file for the correct setup.
+
+```yaml
+# Model configuration
+inhouse_model: false
+```
 
 
 ## Running in local machine

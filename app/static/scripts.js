@@ -33,3 +33,20 @@ function updateStatusMessage(message) {
   statusElement.textContent = message;
   statusElement.style.display = 'block';
 }
+
+function updateClassCounts() {
+  fetch('/class_counts')
+    .then(response => response.json())
+    .then(data => {
+      const container = document.getElementById('class-counts');
+      if (Object.keys(data).length === 0) {
+        container.textContent = "No detections yet.";
+      } else {
+        container.innerHTML = Object.entries(data)
+          .map(([cls, count]) => `<strong>${cls}</strong>: ${count}`)
+          .join(' &nbsp; ');
+      }
+    });
+}
+setInterval(updateClassCounts, 1000);
+updateClassCounts();

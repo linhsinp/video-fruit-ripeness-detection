@@ -6,10 +6,16 @@ import numpy as np
 import supervision as sv
 from config import (
     CONF_THRESHOLD,
+    INHOUSE_MODEL,
+    MODEL_API_KEY,
+    MODEL_API_URL,
     MODEL_PATH,
+    MODEL_PROJECT_NAME,
+    MODEL_VERSION,
     REFERENCE,
     model_options,
 )
+from inference_sdk import InferenceConfiguration, InferenceHTTPClient
 from PIL import Image
 from skimage.exposure import match_histograms
 from ultralytics import YOLO
@@ -80,12 +86,8 @@ def merge_class_ids(detections: dict) -> dict:
     return detections
 
 
-def merge_labels(model, detections: dict) -> list:
+def merge_labels(labels: list) -> list:
     """Merge labels to remove prefixes."""
-    labels = [
-        f"{model.model.names[class_id]}"  # {confidence:0.2f}
-        for _, _, confidence, class_id, _, _ in detections
-    ]
     new_labels = [remove_prefix(label, "b_") for label in labels]
     labels = [remove_prefix(label, "l_") for label in new_labels]
     return labels
@@ -130,7 +132,31 @@ def apply_filter_sinlge_image(
         return result, [], []
 
 
-def inference_generator(video_path, video_settings):
+def inference_over_api(frame: Image) -> dict:
+    """Configure and predict using a pre-trained roboflow model over API.
+
+    Args:
+        image: PIL images, NumPy arrays, URLs, or filenames.
+
+    Returns:
+        Predictions from a roboflow pre-trained model.
+
+    """
+    custom_configuration = InferenceConfiguration(
+        confidence_threshold=CONF_THRESHOLD / 100
+    )
+    inf_client = InferenceHTTPClient(
+        api_url=MODEL_API_URL,
+        api_key=MODEL_API_KEY,
+    )
+    with inf_client.use_configuration(custom_configuration):
+        result = inf_client.infer(
+            frame, model_id=f"{MODEL_PROJECT_NAME}/{MODEL_VERSION}"
+        )
+    return result
+
+
+def inference_generator(current_video, video_settings, class_counts_callback=None):
     """Main inference generator function."""
 
     correct_lighting = model_options["lighting"]
@@ -140,14 +166,17 @@ def inference_generator(video_path, video_settings):
     )
     logging.info(f"Using video settings: {video_settings}")
 
-    # args = parse_arguments()
-    # frame_width, frame_height = args.resolution
+    # Initialize video capture with dynamic video path and settings
     frame_width, frame_height = video_settings["video_resolution"]
-    cap = cv2.VideoCapture(video_path)  # Use the dynamic video path
+    cap = cv2.VideoCapture(current_video)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, frame_width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, frame_height)
 
-    model = YOLO(MODEL_PATH)
+    if INHOUSE_MODEL:
+        logging.info("Making inference using a self-trained model.")
+        model = YOLO(MODEL_PATH)
+    else:
+        logging.info("Making inference using a roboflow model.")
 
     label_annotator = sv.LabelAnnotator(
         text_scale=0.6, text_thickness=1, text_padding=4
@@ -174,14 +203,20 @@ def inference_generator(video_path, video_settings):
             )
 
         # Make inference
-        result = model.predict(
-            frame, save_conf=True, conf=CONF_THRESHOLD / 100, device="cpu"
-        )[0]
+        if INHOUSE_MODEL:
+            result = model.predict(
+                frame, save_conf=True, conf=CONF_THRESHOLD / 100, device="cpu"
+            )[0]
+        else:
+            result = inference_over_api(frame)
 
         # Filter background fruit
         if size_filter:
             starttime = timeit.default_timer()
-            result_dict: dict = reformat_inference(result)
+            if INHOUSE_MODEL:  # remformat to make compatible with roboflow inference
+                result_dict: dict = reformat_inference(result)
+            else:
+                result_dict: dict = result
             filtered_result, _, _ = apply_filter_sinlge_image(
                 result_dict,
                 background_size_threshold=video_settings["background_fruit_size"],
@@ -194,11 +229,28 @@ def inference_generator(video_path, video_settings):
                 "ms\n ",
             )
         else:
-            detections = sv.Detections.from_ultralytics(result)
+            if INHOUSE_MODEL:
+                detections = sv.Detections.from_ultralytics(result)
+            else:
+                detections = sv.Detections.from_inference(result)
+
+        # Count by class
+        detections: dict = merge_class_ids(detections)
+        if INHOUSE_MODEL:
+            labels = [
+                f"{model.model.names[class_id]}"
+                for _, _, confidence, class_id, _, _ in detections
+            ]
+        else:
+            labels = detections.data["class_name"].tolist()
+        labels: list = merge_labels(labels)
+        class_counts = np.unique(labels, return_counts=True)
+        counts_dict = {str(k): int(v) for k, v in zip(*class_counts)}
+        logging.info(f"Class counts: {counts_dict}")
+        if class_counts_callback:
+            class_counts_callback(counts_dict)
 
         # Annotate detections
-        detections: dict = merge_class_ids(detections)
-        labels: list = merge_labels(model, detections)
         annotated_image = mask_annotator.annotate(scene=frame, detections=detections)
         annotated_image = label_annotator.annotate(
             scene=annotated_image, detections=detections, labels=labels
